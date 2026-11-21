@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* Theme is driven by the `dark` class on <html> (toggled by ThemeToggle), not the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+}
+:root.dark {
+  /* Native controls (date pickers, scrollbars, selects) follow the theme. */
+  color-scheme: dark;
+}
