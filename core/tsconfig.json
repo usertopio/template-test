@@ -1,0 +1,7 @@
+// The app's logic, run by the Express server and by Apps Script alike.
+// No Node or browser types here, so anything runtime-specific fails to type-check.
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": { "lib": ["ES2022"], "types": [] },
+  "include": ["src"]
+}

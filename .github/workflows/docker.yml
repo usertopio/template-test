@@ -1,0 +1,113 @@
+# Runs the tests (ci.yml), then builds the Docker image and pushes it to Docker Hub.
+#   push to main   -> usertopio/the-parzival-film-profile:latest and :<short-sha>
+#   push tag v1.2.3 -> :1.2.3 and :1.2
+# Setup: repo Settings → Secrets and variables → Actions → New repository secret:
+#   DOCKERHUB_USERNAME = usertopio
+#   DOCKERHUB_TOKEN    = a Docker Hub access token (Account settings → Personal access tokens, Read & Write)
+#   RENDER_DEPLOY_HOOK_URL (optional) = Render service → Settings → Deploy Hook. After a push to main,
+#     Render deploys the image that was just built.
+#   RENDER_API_KEY (optional) = Render → Account Settings → API Keys. With it, the run waits until the deploy is
+#     live and fails if it doesn't go live, so GitHub's email for the finished run says whether it worked.
+name: Docker image
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: usertopio/the-parzival-film-profile
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      # Optional; the deploy step is skipped when this secret isn't set.
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-qemu-action@v4
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Deploy the exact image just pushed (by digest), so Render never picks up a stale :latest.
+      - name: Trigger Render deploy
+        id: deploy
+        if: github.ref == 'refs/heads/main' && env.RENDER_DEPLOY_HOOK_URL != ''
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          response=$(curl --fail --silent --show-error --get \
+            --data-urlencode "imgURL=docker.io/${IMAGE}@${DIGEST}" \
+            "$RENDER_DEPLOY_HOOK_URL")
+          echo "id=$(jq -r '.deploy.id // empty' <<<"$response" 2>/dev/null)" >> "$GITHUB_OUTPUT"
+          echo "Render deploy triggered for ${IMAGE}@${DIGEST}"
+
+      # Render emails only about failed deploys, so this is what tells you one went live: the run fails unless the
+      # deploy does, and GitHub emails the run's result (see README: "Email when it's live").
+      - name: Wait until the deploy is live
+        if: steps.deploy.outcome == 'success' && env.RENDER_API_KEY != ''
+        env:
+          DEPLOY_ID: ${{ steps.deploy.outputs.id }}
+        run: |
+          # The hook URL is https://api.render.com/deploy/srv-…?key=…
+          service=$(sed -E 's#.*/deploy/(srv-[^?]+).*#\1#' <<<"$RENDER_DEPLOY_HOOK_URL")
+          api() { curl --fail --silent --show-error -H "Authorization: Bearer $RENDER_API_KEY" "https://api.render.com/v1/services/$service/$1"; }
+          # Older hooks answer without the deploy's id: the one just triggered is then the newest.
+          [ -n "$DEPLOY_ID" ] || DEPLOY_ID=$(api 'deploys?limit=1' | jq -r '.[0].deploy.id')
+          # A free instance can take a while to pull the image and pass the health check.
+          for _ in $(seq 1 90); do
+            status=$(api "deploys/$DEPLOY_ID" | jq -r '.status')
+            case "$status" in
+              live)
+                echo "Render deploy $DEPLOY_ID is live" | tee -a "$GITHUB_STEP_SUMMARY"
+                exit 0 ;;
+              *failed|canceled|deactivated)
+                echo "::error::Render deploy $DEPLOY_ID ended as $status"
+                exit 1 ;;
+            esac
+            echo "Render deploy $DEPLOY_ID: $status"
+            sleep 20
+          done
+          echo "::error::Render deploy $DEPLOY_ID wasn't live after 30 minutes"
+          exit 1

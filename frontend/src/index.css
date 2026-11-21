@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Theme is driven by the `dark` class on <html> (toggled by ThemeToggle), not the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+}
+:root.dark {
+  /* Native controls (date pickers, scrollbars, selects) follow the theme. */
+  color-scheme: dark;
+}
+
+/*
+ * Dropdowns: the native arrow sits flush against the right edge (Chrome and Firefox on Linux), so it's hidden and
+ * a chevron is drawn inset as far from the edge as the text is on the left. Left unlayered so it beats the px-*
+ * utilities on each select, which would otherwise let the text run under the chevron.
+ */
+select:not([multiple]):not([size]) {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.25rem;
+  text-overflow: ellipsis;
+}
+:root.dark select:not([multiple]):not([size]) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Switching theme (ThemeToggle): the page cross-fades from the old colors to the new. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 350ms;
+  animation-timing-function: ease-in-out;
+}
+/* Browsers without view transitions fade the colors instead, only while switching. */
+:root.theme-changing,
+:root.theme-changing * {
+  transition:
+    background-color 350ms ease-in-out,
+    border-color 350ms ease-in-out,
+    color 350ms ease-in-out,
+    fill 350ms ease-in-out,
+    stroke 350ms ease-in-out !important;
+}

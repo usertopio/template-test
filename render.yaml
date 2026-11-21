@@ -1,0 +1,30 @@
+# Render Blueprint: one web service that serves the API and the built React app.
+# Render → New → Blueprint → pick this repo. Then fill in the "sync: false" values in the dashboard
+# and add a Secret File named service-account.key.json with your key's contents.
+services:
+  - type: web
+    name: parzival-profile
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: GOOGLE_KEY_FILE
+        value: /etc/secrets/service-account.key.json
+      - key: GOOGLE_SHEET_ID
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      # Media storage (see README: "Media storage")
+      - key: MEDIA_SCRIPT_URL
+        sync: false
+      - key: MEDIA_SCRIPT_SECRET
+        sync: false
+      - key: MEDIA_OWNER_NAME
+        value: Tammasorn

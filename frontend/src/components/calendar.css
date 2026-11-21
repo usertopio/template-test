@@ -1,0 +1,167 @@
+/*
+ * The calendar's colors (CalendarView). FullCalendar's classic theme takes its colors from these variables. Its own
+ * palette switches to dark on [data-color-scheme=dark], but the app's dark mode is the `dark` class on <html>, so
+ * the palette is copied here (as FullCalendar's docs suggest) with the app's slate and blue, keyed to that class.
+ */
+:root {
+  --fc-classic-button: #334155;
+  --fc-classic-button-border: #334155;
+  --fc-classic-button-strong: #1e293b;
+  --fc-classic-button-strong-border: #0f172a;
+  --fc-classic-button-outline: #47556980;
+  --fc-classic-button-foreground: #fff;
+
+  --fc-classic-primary: #2563eb;
+  --fc-classic-primary-foreground: #fff;
+
+  --fc-classic-event: var(--fc-classic-primary);
+  --fc-classic-event-contrast: var(--fc-classic-primary-foreground);
+  --fc-classic-background-event: #22c55e;
+  --fc-classic-background-event-opacity: 15%;
+  --fc-classic-background-event-foreground-opacity: 50%;
+  --fc-classic-highlight: #dbeafe80;
+  --fc-classic-today: #eff6ff;
+  --fc-classic-now: #ef4444;
+  --fc-classic-small-dot-width: 8px;
+  --fc-classic-large-dot-width: 10px;
+
+  --fc-classic-background: #ffffff;
+  --fc-classic-faint: #0000000a;
+  --fc-classic-muted: #00000014;
+  --fc-classic-strong: #00000024;
+
+  --fc-classic-foreground: #0f172a;
+  --fc-classic-faint-foreground: #94a3b8;
+  --fc-classic-muted-foreground: #64748b;
+
+  --fc-classic-border: #e2e8f0;
+  --fc-classic-strong-border: #94a3b8;
+
+  /* Each progress as its badge on the cards shows it (PROGRESS_CLASS in EntryCard): a pale fill, dark text. */
+  --cal-interested: #cffafe;
+  --cal-interested-fg: #155e75;
+  --cal-awaiting-results: #ffedd5;
+  --cal-awaiting-results-fg: #9a3412;
+  --cal-not-started: #e0f2fe;
+  --cal-not-started-fg: #075985;
+  --cal-in-progress: #ede9fe;
+  --cal-in-progress-fg: #5b21b6;
+  --cal-completed: #d1fae5;
+  --cal-completed-fg: #065f46;
+  --cal-cancelled-by-organizer: #e2e8f0;
+  --cal-cancelled-by-organizer-fg: #475569;
+  --cal-cancelled-by-applicant: #e2e8f0;
+  --cal-cancelled-by-applicant-fg: #475569;
+  --cal-rejected: #ffe4e6;
+  --cal-rejected-fg: #9f1239;
+  --cal-none: #f1f5f9;
+  --cal-none-fg: #334155;
+  /* The dots on application dates: the colors of the stages they end (Interested, Awaiting Results). */
+  --cal-deadline: #0891b2;
+  --cal-results: #ea580c;
+}
+
+:root.dark {
+  --fc-classic-highlight: #3b82f633;
+  --fc-classic-today: #1e3a8a40;
+
+  --fc-classic-background: #0f172a;
+  --fc-classic-faint: #ffffff0a;
+  --fc-classic-muted: #ffffff14;
+  --fc-classic-strong: #ffffff24;
+
+  --fc-classic-foreground: #f1f5f9;
+  --fc-classic-faint-foreground: #475569;
+  --fc-classic-muted-foreground: #94a3b8;
+
+  --fc-classic-border: #1e293b;
+  --fc-classic-strong-border: #334155;
+
+  /* A tint of the color over the dark page and light text, as the badges have in dark mode. */
+  --cal-interested: #06b6d433;
+  --cal-interested-fg: #67e8f9;
+  --cal-awaiting-results: #f9731633;
+  --cal-awaiting-results-fg: #fdba74;
+  --cal-not-started: #0ea5e933;
+  --cal-not-started-fg: #7dd3fc;
+  --cal-in-progress: #8b5cf633;
+  --cal-in-progress-fg: #c4b5fd;
+  --cal-completed: #10b98133;
+  --cal-completed-fg: #6ee7b7;
+  --cal-cancelled-by-organizer: #33415599;
+  --cal-cancelled-by-organizer-fg: #94a3b8;
+  --cal-cancelled-by-applicant: #33415599;
+  --cal-cancelled-by-applicant-fg: #94a3b8;
+  --cal-rejected: #f43f5e33;
+  --cal-rejected-fg: #fda4af;
+  --cal-none: #1e293b;
+  --cal-none-fg: #cbd5e1;
+  --cal-deadline: #22d3ee;
+  --cal-results: #fb923c;
+}
+
+/* A day's number adds an entry that day (CalendarView's navLinkDayClick): a + before it on hover and focus says so. */
+.calendar-days [role='link']::before {
+  content: '+';
+  margin-inline-end: 0.25rem;
+  opacity: 0;
+}
+.calendar-days [role='link']:hover::before,
+.calendar-days [role='link']:focus-visible::before {
+  opacity: 1;
+}
+/* A phone's list heads each day with two links, the date and its weekday; one + is enough. */
+.calendar-days [role='link'] ~ [role='link']::before {
+  content: none;
+}
+/* Touch screens have no hover to reveal it. */
+@media (hover: none) {
+  .calendar-days [role='link']::before {
+    opacity: 0.6;
+  }
+}
+
+/*
+ * A phone's list has the width for whole names, which the theme cuts to one line like a bar's. Matched by the list's
+ * structure (an event's title inside it), since the theme's own class names are generated.
+ */
+.calendar-list [role='listitem'] [role='button'] div {
+  white-space: normal;
+  overflow: visible;
+}
+
+/*
+ * Every piece of an entry (each week of a long bar, its deadline and results dots) is a button: a pointer rather than
+ * a text cursor, and no text selected by the double click that opens it. Under the mouse, every piece of that entry
+ * fills with a deeper shade of its own color; kept by a click, it fills with the color itself, the name in the
+ * page's color on it. Not scoped to .calendar-days: a day's "+ more" opens in a popover.
+ */
+[data-calendar-entry] {
+  /* The entry's strong color: a bar's text color, or a dot's own color. */
+  --cal-strong: var(--fc-event-contrast-color);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 120ms, color 120ms;
+}
+[data-calendar-entry] * {
+  cursor: pointer;
+}
+[data-calendar-entry][data-calendar-kind='dot'] {
+  --cal-strong: var(--fc-event-color);
+}
+[data-calendar-entry][data-calendar-kind='bar'][data-hovered] {
+  background-color: color-mix(in oklab, var(--cal-strong) 30%, var(--fc-event-color));
+}
+[data-calendar-entry][data-calendar-kind='dot'][data-hovered] {
+  background-color: color-mix(in oklab, var(--cal-strong) 25%, transparent);
+}
+[data-calendar-entry][aria-pressed='true'] {
+  background-color: var(--cal-strong);
+  font-weight: 600;
+}
+[data-calendar-entry][aria-pressed='true'],
+[data-calendar-entry][aria-pressed='true'] * {
+  color: var(--fc-classic-background);
+  /* A dot drawn in the fill's color would vanish into it. */
+  border-color: var(--fc-classic-background);
+}

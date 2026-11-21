@@ -1,0 +1,29 @@
+{
+  "name": "parzival-profile",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "core",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n backend,frontend -c blue,magenta \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run typecheck -w shared && npm run typecheck -w core && npm run build -w backend && npm run build -w frontend",
+    "start": "npm run start -w backend",
+    "media-script:deploy": "node backend/apps-script/deploy.mjs",
+    "test": "vitest run",
+    "test:unit": "vitest run test/unit",
+    "test:integration": "vitest run test/integration",
+    "test:watch": "vitest",
+    "verify": "npm run build && npm test",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.4.1",
+    "concurrently": "^9.2.0",
+    "typescript": "^5.9.2",
+    "vitest": "^5.0.2"
+  }
+}

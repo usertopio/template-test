@@ -1,0 +1,13 @@
+{
+  "name": "@profile/core",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./test/helpers/index.ts"
+  },
+  "scripts": { "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json" },
+  "dependencies": { "@profile/shared": "*" }
+}

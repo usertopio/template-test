@@ -1,0 +1,11 @@
+#!/bin/sh
+# Runs before every `git push`: type-check + build, then unit and integration tests.
+# Installed by `npm install` (the "prepare" script sets core.hooksPath=.githooks).
+# Skip once in an emergency with: git push --no-verify
+set -e
+echo "pre-push: type-check and build…"
+npm run -s build
+echo "pre-push: unit tests…"
+npm run -s test:unit
+echo "pre-push: integration tests…"
+npm run -s test:integration
